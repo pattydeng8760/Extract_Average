@@ -17,7 +17,7 @@ import csv
 import matplotlib.pyplot as plt
 
 ## The requried input values
-nstart = 6       # solution dir count to begin the extract
+nstart =        # solution dir count to begin the extract
 # The path of the source mesh
 meshpath = '/scratch/p/plavoie/denggua1/Bombardier_LES/B_10AOA_LES/MESH_ZONE_Nov24/'
 #meshpath = '/home/p/plavoie/denggua1/scratch/Bombardier_LES/B_10AOA_LES/MESH_ZONE2/'

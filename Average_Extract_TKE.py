@@ -34,6 +34,14 @@ vars_ave = ['gamma_bar', 'hypvis_artif', 'hypvis_artif_y', 'mpi_rank', 'myzone',
         'AIR','Q1','Q2','Enstrophy','Strain','Pressure_Hessian','Strain_Rate','du_dx','du_dy','du_dz','dv_dx','dv_dy','dv_dz','dw_dx','dw_dy','dw_dz',
         'vort_y','vort_z','div']
 
+vars_inst = ['gamma_bar', 'hypvis_artif', 'hypvis_artif_y', 'mpi_rank', 'myzone', 'r_bar', 
+        'ss_bar', 'tau_turb_xy', 'tau_turb_xz', 'tau_turb_yz', 'vis_artif', 'vis_artif_y', 
+        'visco_mask', 'wall_EnergyFlux_normal', 'wall_EnergyFlux_x', 'wall_EnergyFlux_y', 
+        'wall_EnergyFlux_z', 'zeta_p', 'zeta_y', 'rhoE', 'rhou', 'rhov', 'rhow', 
+        'AIR','Q1','Q2','wall_Stress_x','wall_Stress_y','wall_Stress_z','wall_normal_Stress','wall_shear_Stress','wall_yplus',
+        'du_dx','du_dy','du_dz','dv_dx','dv_dy','dv_dz','dw_dx','dw_dy','dw_dz',
+        'vort_y','vort_z']
+
 # Function to take out the unique file names in the folder
 def sort_files(rand):  # Sorting the files in the subdirectory and filtering non-solution data and lists
     rand_sub = os.listdir(rand)
@@ -69,7 +77,7 @@ def Welford_avg(mean, current, iter):    # Welford's algorithm for calculating t
     mean = mean + (1/iter)*(current-mean) if iter > 0 else current
     return mean
 
-def Extract_data_TKE(ave_dirName, base, nodes):
+def Extract_data_TKE(ave_dirName, base, nodes, vars_delete):
     """
     Two-pass method for accurate turbulence statistics including velocity-TKE correlations:
     Pass 1: Calculate mean velocities, pressure, and mean TKE
@@ -110,12 +118,23 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     print(f'\n{"FIRST PASS: Calculating Mean Quantities":.^80}\n')
     
     # Initialize mean quantities
-    P_mean = np.zeros((nodes,), dtype=np.float64)
-    u_mean = np.zeros((nodes,), dtype=np.float64)
-    v_mean = np.zeros((nodes,), dtype=np.float64)
-    w_mean = np.zeros((nodes,), dtype=np.float64)
+    P_mean = np.zeros((nodes,), dtype=np.float32)
+    u_mean = np.zeros((nodes,), dtype=np.float32)
+    v_mean = np.zeros((nodes,), dtype=np.float32)
+    w_mean = np.zeros((nodes,), dtype=np.float32)
     Q_mean = np.zeros((nodes,), dtype=np.float64)
     TKE_mean = np.zeros((nodes,), dtype=np.float64)
+    
+    # Initialize the velocity gradient components
+    du_dx = np.zeros((nodes,), dtype=np.float32)
+    du_dy = np.zeros((nodes,), dtype=np.float32)
+    du_dz = np.zeros((nodes,), dtype=np.float32)
+    dv_dx = np.zeros((nodes,), dtype=np.float32)
+    dv_dy = np.zeros((nodes,), dtype=np.float32)
+    dv_dz = np.zeros((nodes,), dtype=np.float32)
+    dw_dx = np.zeros((nodes,), dtype=np.float32)
+    dw_dy = np.zeros((nodes,), dtype=np.float32)
+    dw_dz = np.zeros((nodes,), dtype=np.float32)
     
     count = 0
     for sol_file in file_list:
@@ -140,6 +159,16 @@ def Extract_data_TKE(ave_dirName, base, nodes):
         u_mean = Welford_avg(u_mean, u_inst, count)
         v_mean = Welford_avg(v_mean, v_inst, count)
         w_mean = Welford_avg(w_mean, w_inst, count)
+        # The mean velocity gradients
+        du_dx = Welford_avg(du_dx, base[0][0]['du_dx'], count)
+        du_dy = Welford_avg(du_dy, base[0][0]['du_dy'], count)
+        du_dz = Welford_avg(du_dz, base[0][0]['du_dz'], count)
+        dv_dx = Welford_avg(dv_dx, base[0][0]['dv_dx'], count)
+        dv_dy = Welford_avg(dv_dy, base[0][0]['dv_dy'], count)
+        dv_dz = Welford_avg(dv_dz, base[0][0]['dv_dz'], count)
+        dw_dx = Welford_avg(dw_dx, base[0][0]['dw_dx'], count)
+        dw_dy = Welford_avg(dw_dy, base[0][0]['dw_dy'], count)
+        dw_dz = Welford_avg(dw_dz, base[0][0]['dw_dz'], count)
         count += 1
     
     print(f'First pass complete. Mean values calculated from {count} files.')
@@ -198,6 +227,17 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     v_TKE_mean = np.zeros((nodes,), dtype=np.float64)
     w_TKE_mean = np.zeros((nodes,), dtype=np.float64)
     
+    # Initialize the fluctuating gradients
+    du_dx_fluct = np.zeros((nodes,), dtype=np.float32)
+    du_dy_fluct = np.zeros((nodes,), dtype=np.float32)
+    du_dz_fluct = np.zeros((nodes,), dtype=np.float32)
+    dv_dx_fluct = np.zeros((nodes,), dtype=np.float32)
+    dv_dy_fluct = np.zeros((nodes,), dtype=np.float32)
+    dv_dz_fluct = np.zeros((nodes,), dtype=np.float32)
+    dw_dx_fluct = np.zeros((nodes,), dtype=np.float32)
+    dw_dy_fluct = np.zeros((nodes,), dtype=np.float32)
+    dw_dz_fluct = np.zeros((nodes,), dtype=np.float32)
+    
     # Initialize TKE fluctuation statistics
     TKE_TKE_mean = np.zeros((nodes,), dtype=np.float64)  # TKE variance (TKE')^2
     
@@ -250,6 +290,17 @@ def Extract_data_TKE(ave_dirName, base, nodes):
         v_TKE_mean = Welford_avg(v_TKE_mean, v_prime * TKE_prime, count)
         w_TKE_mean = Welford_avg(w_TKE_mean, w_prime * TKE_prime, count)
         
+        # Update fluctuating gradients
+        du_dx_fluct = Welford_avg(du_dx_fluct, base[0][0]['du_dx'] - du_dx, count)
+        du_dy_fluct = Welford_avg(du_dy_fluct, base[0][0]['du_dy'] - du_dy, count)
+        du_dz_fluct = Welford_avg(du_dz_fluct, base[0][0]['du_dz'] - du_dz, count)
+        dv_dx_fluct = Welford_avg(dv_dx_fluct, base[0][0]['dv_dx'] - dv_dx, count)
+        dv_dy_fluct = Welford_avg(dv_dy_fluct, base[0][0]['dv_dy'] - dv_dy, count)
+        dv_dz_fluct = Welford_avg(dv_dz_fluct, base[0][0]['dv_dz'] - dv_dz, count)
+        dw_dx_fluct = Welford_avg(dw_dx_fluct, base[0][0]['dw_dx'] - dw_dx, count)
+        dw_dy_fluct = Welford_avg(dw_dy_fluct, base[0][0]['dw_dy'] - dw_dy, count)
+        dw_dz_fluct = Welford_avg(dw_dz_fluct, base[0][0]['dw_dz'] - dw_dz, count)
+        
         # Update TKE variance
         TKE_TKE_mean = Welford_avg(TKE_TKE_mean, TKE_prime * TKE_prime, count)
         
@@ -268,12 +319,40 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     # Print summary statistics
     print(f'Third pass complete. Turbulence statistics calculated from {count} files.')
     # =================================================================================
-    # Computing the Gradients
+    # Outputing the averaged results
     # =================================================================================
     r = Reader('hdf_avbp')
     r['base'] = base
     r['filename'] = file_list[0]
     base = r.read()
+    base.delete_variables(vars_delete)
+    # The mean flow quantities
+    base[0][0]['P'] = P_mean
+    base[0][0]['u'] = u_mean
+    base[0][0]['v'] = v_mean
+    base[0][0]['w'] = w_mean
+    # The mean flow gradients
+    base[0][0]['du_dx'] = du_dx
+    base[0][0]['du_dy'] = du_dy
+    base[0][0]['du_dz'] = du_dz
+    base[0][0]['dv_dx'] = dv_dx
+    base[0][0]['dv_dy'] = dv_dy
+    base[0][0]['dv_dz'] = dv_dz
+    base[0][0]['dw_dx'] = dw_dx
+    base[0][0]['dw_dy'] = dw_dy
+    base[0][0]['dw_dz'] = dw_dz
+    # The fluctuating gradients
+    base[0][0]['du_dx_fluct'] = du_dx_fluct
+    base[0][0]['du_dy_fluct'] = du_dy_fluct
+    base[0][0]['du_dz_fluct'] = du_dz_fluct
+    base[0][0]['dv_dx_fluct'] = dv_dx_fluct
+    base[0][0]['dv_dy_fluct'] = dv_dy_fluct
+    base[0][0]['dv_dz_fluct'] = dv_dz_fluct
+    base[0][0]['dw_dx_fluct'] = dw_dx_fluct
+    base[0][0]['dw_dy_fluct'] = dw_dy_fluct
+    base[0][0]['dw_dz_fluct'] = dw_dz_fluct
+
+    # The turbulence statistics
     base[0][0]['TKE'] = TKE_mean
     base[0][0]['up_mean'] = up_mean
     base[0][0]['vp_mean'] = vp_mean
@@ -281,55 +360,66 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     base[0][0]['u_TKE_mean'] = u_TKE_mean
     base[0][0]['v_TKE_mean'] = v_TKE_mean
     base[0][0]['w_TKE_mean'] = w_TKE_mean
+    
+    # The Reynolds stress components
+    base[0][0]['Reynolds_uu'] = uu_mean
+    base[0][0]['Reynolds_vv'] = vv_mean
+    base[0][0]['Reynolds_ww'] = ww_mean
+    base[0][0]['Reynolds_uv'] = uv_mean
+    base[0][0]['Reynolds_uw'] = uw_mean
+    base[0][0]['Reynolds_vw'] = vw_mean
+    base[0][0]['Reynolds_pp'] = pp_mean
+
+    # The RMS components
+    base[0][0]['TKE_rms'] = TKE_rms
+    base[0][0]['u_rms'] = u_rms
+    base[0][0]['v_rms'] = v_rms
+    base[0][0]['w_rms'] = w_rms
+    
     writer = Writer('hdf_antares')
     writer['filename'] = os.path.join('Intermediate_Turbulence_Stats')
     writer['base'] = base
     writer['dtype'] = 'float32'
     writer.dump()
     del base
+    
     # =================================================================================
+    # Outputing the averaged results
+    # =================================================================================
+    print(f'\n{"Calculating the gradients":.^80}\n')
     r = Reader('hdf_antares')
     r['filename'] = 'Intermediate_Turbulence_Stats.h5'
     base = r.read()
-    
     
     print('Computing gradients of TKE...')
     treatment = Treatment('gradient')
     treatment['base'] = base
     treatment['coordinates'] = ['x', 'y', 'z']
     treatment['variables'] = ['TKE']
-    comp = treatment.execute()
-    comp.cell_to_node()
+    base = treatment.execute()
     
     # The gradient of velocity - pressure correlations
-    print('Computing gradients of pressure-velocity correlations in x...')
+    print('Computing gradients of pressure-velocity correlations in u...')
     treatment = Treatment('gradient')
-    treatment['base'] = comp
-    treatment['coordinates'] = ['x']
-    treatment['variables'] = ['up_mean', 'u_TKE_mean']
-    comp = treatment.execute()
+    treatment['base'] = base
+    treatment['coordinates'] = ['x','y','z']
+    treatment['variables'] = ['up_mean', 'vp_mean', 'wp_mean']
+    base = treatment.execute()
     
     # The gradient of velocity - pressure correlations
-    print('Computing gradients of pressure-velocity correlations in y...')
+    print('Computing gradients of TKE-velocity correlations in v...')
     treatment = Treatment('gradient')
-    treatment['base'] = comp
-    treatment['coordinates'] = ['y']
-    treatment['variables'] = ['vp_mean', 'v_TKE_mean']
-    comp = treatment.execute()
-    
-    treatment = Treatment('gradient')
-    print('Computing gradients of pressure-velocity correlations in z...')
-    treatment['base'] = comp
-    treatment['coordinates'] = ['z']
-    treatment['variables'] = ['wp_mean', 'w_TKE_mean']
-    comp = treatment.execute()
+    treatment['base'] = base
+    treatment['coordinates'] = ['x','y','z']
+    treatment['variables'] = ['u_TKE_mean', 'v_TKE_mean', 'w_TKE_mean']
+    base = treatment.execute()
     
     print('Computing second order gradients of TKE in x, y, z...')
     treatment = Treatment('gradient')
-    treatment['base'] = comp
+    treatment['base'] = base
     treatment['coordinates'] = ['x','y','z']
     treatment['variables'] = ['grad_TKE_x', 'grad_TKE_y','grad_TKE_z']
-    comp = treatment.execute()
+    base = treatment.execute()
 
     # =================================================================================
     # OUTPUT RESULTS
@@ -337,90 +427,90 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     print(f'\n{"WRITING OUTPUT FILES":.^80}\n')
     
     # Create output base with all quantities
-    output_base = Base()
-    output_base['0'] = Zone()
-    output_base[0].shared.connectivity = base[0][0].connectivity
-    output_base[0].shared["x"] = base[0][0]["x"]
-    output_base[0].shared["y"] = base[0][0]["y"]
-    output_base[0].shared["z"] = base[0][0]["z"]
-    output_base[0][str(0)] = Instant()
+    # output_base = Base()
+    # output_base['0'] = Zone()
+    # output_base[0].shared.connectivity = base[0][0].connectivity
+    # output_base[0].shared["x"] = base[0][0]["x"]
+    # output_base[0].shared["y"] = base[0][0]["y"]
+    # output_base[0].shared["z"] = base[0][0]["z"]
+    # output_base[0][str(0)] = Instant()
     
-    # Mean flow quantities
-    output_base[0][str(0)]["P_mean"] = P_mean.astype(np.float32)
-    output_base[0][str(0)]["u_mean"] = u_mean.astype(np.float32)
-    output_base[0][str(0)]["v_mean"] = v_mean.astype(np.float32)
-    output_base[0][str(0)]["w_mean"] = w_mean.astype(np.float32)
-    output_base[0][str(0)]["Q_mean"] = Q_mean.astype(np.float32)
+    # # Mean flow quantities
+    # output_base[0][str(0)]["P_mean"] = P_mean.astype(np.float32)
+    # output_base[0][str(0)]["u_mean"] = u_mean.astype(np.float32)
+    # output_base[0][str(0)]["v_mean"] = v_mean.astype(np.float32)
+    # output_base[0][str(0)]["w_mean"] = w_mean.astype(np.float32)
+    # output_base[0][str(0)]["Q_mean"] = Q_mean.astype(np.float32)
     
-    # Turbulence quantities
-    output_base[0][str(0)]["TKE"] = TKE_mean.astype(np.float32)
-    output_base[0][str(0)]["TKE_from_Reynolds"] = TKE_final.astype(np.float32)
-    output_base[0][str(0)]["TKE_rms"] = TKE_rms.astype(np.float32)
-    output_base[0][str(0)]["u_rms"] = u_rms.astype(np.float32)
-    output_base[0][str(0)]["v_rms"] = v_rms.astype(np.float32)
-    output_base[0][str(0)]["w_rms"] = w_rms.astype(np.float32)
-    output_base[0][str(0)]["P_rms"] = P_rms.astype(np.float32)
+    # # Turbulence quantities
+    # output_base[0][str(0)]["TKE"] = TKE_mean.astype(np.float32)
+    # output_base[0][str(0)]["TKE_from_Reynolds"] = TKE_final.astype(np.float32)
+    # output_base[0][str(0)]["TKE_rms"] = TKE_rms.astype(np.float32)
+    # output_base[0][str(0)]["u_rms"] = u_rms.astype(np.float32)
+    # output_base[0][str(0)]["v_rms"] = v_rms.astype(np.float32)
+    # output_base[0][str(0)]["w_rms"] = w_rms.astype(np.float32)
+    # output_base[0][str(0)]["P_rms"] = P_rms.astype(np.float32)
     
-    # Reynolds stress components
-    output_base[0][str(0)]["Reynolds_uu"] = uu_mean.astype(np.float32)
-    output_base[0][str(0)]["Reynolds_vv"] = vv_mean.astype(np.float32)
-    output_base[0][str(0)]["Reynolds_ww"] = ww_mean.astype(np.float32)
-    output_base[0][str(0)]["Reynolds_uv"] = uv_mean.astype(np.float32)
-    output_base[0][str(0)]["Reynolds_uw"] = uw_mean.astype(np.float32)
-    output_base[0][str(0)]["Reynolds_vw"] = vw_mean.astype(np.float32)
-    output_base[0][str(0)]["Reynolds_pp"] = pp_mean.astype(np.float32)
+    # # Reynolds stress components
+    # output_base[0][str(0)]["Reynolds_uu"] = uu_mean.astype(np.float32)
+    # output_base[0][str(0)]["Reynolds_vv"] = vv_mean.astype(np.float32)
+    # output_base[0][str(0)]["Reynolds_ww"] = ww_mean.astype(np.float32)
+    # output_base[0][str(0)]["Reynolds_uv"] = uv_mean.astype(np.float32)
+    # output_base[0][str(0)]["Reynolds_uw"] = uw_mean.astype(np.float32)
+    # output_base[0][str(0)]["Reynolds_vw"] = vw_mean.astype(np.float32)
+    # output_base[0][str(0)]["Reynolds_pp"] = pp_mean.astype(np.float32)
     
-    # Pressure-velocity correlations
-    output_base[0][str(0)]["up_correlation"] = up_mean.astype(np.float32)
-    output_base[0][str(0)]["vp_correlation"] = vp_mean.astype(np.float32)
-    output_base[0][str(0)]["wp_correlation"] = wp_mean.astype(np.float32)
+    # # Pressure-velocity correlations
+    # output_base[0][str(0)]["up_correlation"] = up_mean.astype(np.float32)
+    # output_base[0][str(0)]["vp_correlation"] = vp_mean.astype(np.float32)
+    # output_base[0][str(0)]["wp_correlation"] = wp_mean.astype(np.float32)
     
-    # Velocity-TKE correlations
-    output_base[0][str(0)]["u_TKE_correlation"] = u_TKE_mean.astype(np.float32)
-    output_base[0][str(0)]["v_TKE_correlation"] = v_TKE_mean.astype(np.float32)
-    output_base[0][str(0)]["w_TKE_correlation"] = w_TKE_mean.astype(np.float32)
+    # # Velocity-TKE correlations
+    # output_base[0][str(0)]["u_TKE_correlation"] = u_TKE_mean.astype(np.float32)
+    # output_base[0][str(0)]["v_TKE_correlation"] = v_TKE_mean.astype(np.float32)
+    # output_base[0][str(0)]["w_TKE_correlation"] = w_TKE_mean.astype(np.float32)
     
     # Write comprehensive turbulence statistics
     writer = Writer('hdf_antares')
     writer['filename'] = os.path.join('Averaged_Solution_Complete_Turbulence_Stats')
-    writer['base'] = output_base
-    writer['dtype'] = 'float32'
-    writer.dump()
-    
-    # Also update the original base for compatibility with existing code
-    base[0][0]['P'] = P_mean.astype(np.float32)
-    base[0][0]['u'] = u_mean.astype(np.float32)
-    base[0][0]['v'] = v_mean.astype(np.float32)
-    base[0][0]['w'] = w_mean.astype(np.float32)
-    base[0][0]['Q'] = Q_mean.astype(np.float32)
-    base[0][0]['TKE'] = TKE_mean.astype(np.float32)
-    base[0][0]['u_rms'] = u_rms.astype(np.float32)
-    base[0][0]['v_rms'] = v_rms.astype(np.float32)
-    base[0][0]['w_rms'] = w_rms.astype(np.float32)
-    base[0][0]['P_rms'] = P_rms.astype(np.float32)
-    
-    # Write standard output (for compatibility)
-    writer = Writer('hdf_antares')
-    writer['filename'] = os.path.join('Averaged_Solution')
     writer['base'] = base
     writer['dtype'] = 'float32'
     writer.dump()
     
-    # Extract surface data
-    patch = base[base.families['Patches']]
-    writer = Writer('hdf_antares')
-    writer['base'] = patch['Airfoil_Surface','Airfoil_Trailing_Edge','Airfoil_Side_LE','Airfoil_Side_Mid','Airfoil_Side_TE']
-    writer['dtype'] = 'float32'
-    writer['filename'] = os.path.join('Averaged_Solution_Surface')
-    writer.dump()
+    # # Also update the original base for compatibility with existing code
+    # base[0][0]['P'] = P_mean.astype(np.float32)
+    # base[0][0]['u'] = u_mean.astype(np.float32)
+    # base[0][0]['v'] = v_mean.astype(np.float32)
+    # base[0][0]['w'] = w_mean.astype(np.float32)
+    # base[0][0]['Q'] = Q_mean.astype(np.float32)
+    # base[0][0]['TKE'] = TKE_mean.astype(np.float32)
+    # base[0][0]['u_rms'] = u_rms.astype(np.float32)
+    # base[0][0]['v_rms'] = v_rms.astype(np.float32)
+    # base[0][0]['w_rms'] = w_rms.astype(np.float32)
+    # base[0][0]['P_rms'] = P_rms.astype(np.float32)
     
-    # Write reduced variables version
-    writer = Writer('hdf_antares')
-    writer['filename'] = os.path.join('Averaged_Solution_Reduced_Variables')
-    base.delete_variables(vars_ave)
-    writer['base'] = base
-    writer['dtype'] = 'float32'
-    writer.dump()
+    # # Write standard output (for compatibility)
+    # writer = Writer('hdf_antares')
+    # writer['filename'] = os.path.join('Averaged_Solution')
+    # writer['base'] = base
+    # writer['dtype'] = 'float32'
+    # writer.dump()
+    
+    # # Extract surface data
+    # patch = base[base.families['Patches']]
+    # writer = Writer('hdf_antares')
+    # writer['base'] = patch['Airfoil_Surface','Airfoil_Trailing_Edge','Airfoil_Side_LE','Airfoil_Side_Mid','Airfoil_Side_TE']
+    # writer['dtype'] = 'float32'
+    # writer['filename'] = os.path.join('Averaged_Solution_Surface')
+    # writer.dump()
+    
+    # # Write reduced variables version
+    # writer = Writer('hdf_antares')
+    # writer['filename'] = os.path.join('Averaged_Solution_Reduced_Variables')
+    # base.delete_variables(vars_ave)
+    # writer['base'] = base
+    # writer['dtype'] = 'float32'
+    # writer.dump()
     
     text = 'Complete Turbulence Statistics Calculation Finished!'
     print(f'\n{text:.^80}\n')
@@ -430,7 +520,7 @@ def Extract_data_TKE(ave_dirName, base, nodes):
 
 def main():
     base, nodes = extract_mesh(meshpath,meshfile)                   # Extract the mesh
-    Extract_data_TKE(sol_dirName, base, nodes)                          # Extract the data from the solution directory
+    Extract_data_TKE(sol_dirName, base, nodes, vars_inst)                          # Extract the data from the solution directory
 
 
 if __name__ ==  '__main__':
