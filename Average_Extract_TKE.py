@@ -60,7 +60,6 @@ def extract_mesh(meshpath,meshfile):    # function to extract the mesh
     base = r.read() # b is the Base object of the Antares API
     base.show()
     nodes = base[0].shared['x'].shape[0]            # The number of nodes in the mesh
-    base.show()
     return base, nodes
 
 def Welford_avg(mean, current, iter):    # Welford's algorithm for calculating the mean and variance
@@ -148,6 +147,7 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     # =================================================================================
     # SECOND PASS: Calculate fluctuating quantities and correlations
     # =================================================================================
+    count=0
     print(f'\n{"SECOND PASS: Calculating TKE":.^80}\n')
     for sol_file in file_list:
         if count % 10 == 0:
@@ -204,7 +204,7 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     count = 0
     for sol_file in file_list:
         if count % 10 == 0:
-            print(f'Second pass - Processing file {count+1}/{total_files}: {os.path.basename(sol_file)}')
+            print(f'Third pass - Processing file {count+1}/{total_files}: {os.path.basename(sol_file)}')
         
         r = Reader('hdf_avbp')
         r['base'] = base
@@ -281,40 +281,55 @@ def Extract_data_TKE(ave_dirName, base, nodes):
     base[0][0]['u_TKE_mean'] = u_TKE_mean
     base[0][0]['v_TKE_mean'] = v_TKE_mean
     base[0][0]['w_TKE_mean'] = w_TKE_mean
+    writer = Writer('hdf_antares')
+    writer['filename'] = os.path.join('Intermediate_Turbulence_Stats')
+    writer['base'] = base
+    writer['dtype'] = 'float32'
+    writer.dump()
+    del base
+    # =================================================================================
+    r = Reader('hdf_antares')
+    r['filename'] = 'Intermediate_Turbulence_Stats.h5'
+    base = r.read()
     
-    # The gradient of TKE
+    
+    print('Computing gradients of TKE...')
     treatment = Treatment('gradient')
     treatment['base'] = base
     treatment['coordinates'] = ['x', 'y', 'z']
     treatment['variables'] = ['TKE']
-    base = treatment.execute()
+    comp = treatment.execute()
+    comp.cell_to_node()
     
     # The gradient of velocity - pressure correlations
+    print('Computing gradients of pressure-velocity correlations in x...')
     treatment = Treatment('gradient')
-    treatment['base'] = base
+    treatment['base'] = comp
     treatment['coordinates'] = ['x']
     treatment['variables'] = ['up_mean', 'u_TKE_mean']
-    base = treatment.execute()
+    comp = treatment.execute()
     
     # The gradient of velocity - pressure correlations
+    print('Computing gradients of pressure-velocity correlations in y...')
     treatment = Treatment('gradient')
-    treatment['base'] = base
+    treatment['base'] = comp
     treatment['coordinates'] = ['y']
     treatment['variables'] = ['vp_mean', 'v_TKE_mean']
-    base = treatment.execute()
+    comp = treatment.execute()
     
     treatment = Treatment('gradient')
-    treatment['base'] = base
+    print('Computing gradients of pressure-velocity correlations in z...')
+    treatment['base'] = comp
     treatment['coordinates'] = ['z']
     treatment['variables'] = ['wp_mean', 'w_TKE_mean']
-    base = treatment.execute()
+    comp = treatment.execute()
     
+    print('Computing second order gradients of TKE in x, y, z...')
     treatment = Treatment('gradient')
-    treatment['base'] = base
+    treatment['base'] = comp
     treatment['coordinates'] = ['x','y','z']
     treatment['variables'] = ['grad_TKE_x', 'grad_TKE_y','grad_TKE_z']
-
-    base = treatment.execute()
+    comp = treatment.execute()
 
     # =================================================================================
     # OUTPUT RESULTS
