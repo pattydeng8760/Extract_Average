@@ -377,12 +377,14 @@ def Extract_data_TKE(ave_dirName, base, nodes, vars_delete):
     base[0][0]['w_rms'] = w_rms
     
     writer = Writer('hdf_antares')
-    writer['filename'] = os.path.join('Intermediate_Turbulence_Stats')
+    file_name = 'Intermediate_Turbulence_Stats'
+    writer['filename'] = file_name
     writer['base'] = base
     writer['dtype'] = 'float32'
     writer.dump()
-    del base
-    
+    return filename
+
+def compute_gradients(filename):
     # =================================================================================
     # Outputing the averaged results
     # =================================================================================
@@ -397,6 +399,7 @@ def Extract_data_TKE(ave_dirName, base, nodes, vars_delete):
     treatment['coordinates'] = ['x', 'y', 'z']
     treatment['variables'] = ['TKE']
     base = treatment.execute()
+    base.cell_to_node()
     
     # The gradient of velocity - pressure correlations
     print('Computing gradients of pressure-velocity correlations in u...')
@@ -405,6 +408,7 @@ def Extract_data_TKE(ave_dirName, base, nodes, vars_delete):
     treatment['coordinates'] = ['x','y','z']
     treatment['variables'] = ['up_mean', 'vp_mean', 'wp_mean']
     base = treatment.execute()
+    base.cell_to_node()
     
     # The gradient of velocity - pressure correlations
     print('Computing gradients of TKE-velocity correlations in v...')
@@ -413,6 +417,7 @@ def Extract_data_TKE(ave_dirName, base, nodes, vars_delete):
     treatment['coordinates'] = ['x','y','z']
     treatment['variables'] = ['u_TKE_mean', 'v_TKE_mean', 'w_TKE_mean']
     base = treatment.execute()
+    base.cell_to_node()
     
     print('Computing second order gradients of TKE in x, y, z...')
     treatment = Treatment('gradient')
@@ -420,7 +425,7 @@ def Extract_data_TKE(ave_dirName, base, nodes, vars_delete):
     treatment['coordinates'] = ['x','y','z']
     treatment['variables'] = ['grad_TKE_x', 'grad_TKE_y','grad_TKE_z']
     base = treatment.execute()
-
+    base.cell_to_node()
     # =================================================================================
     # OUTPUT RESULTS
     # =================================================================================
@@ -514,14 +519,12 @@ def Extract_data_TKE(ave_dirName, base, nodes, vars_delete):
     
     text = 'Complete Turbulence Statistics Calculation Finished!'
     print(f'\n{text:.^80}\n')
-    
-    return output_base
 
 
 def main():
     base, nodes = extract_mesh(meshpath,meshfile)                   # Extract the mesh
-    Extract_data_TKE(sol_dirName, base, nodes, vars_inst)                          # Extract the data from the solution directory
-
+    intermediate_file = Extract_data_TKE(sol_dirName, base, nodes, vars_inst)                          # Extract the data from the solution directory
+    compute_gradients(intermediate_file)                            # Compute the gradients and turbulence statistics
 
 if __name__ ==  '__main__':
     main()
