@@ -672,9 +672,9 @@ def compute_TKE_transport(vars_del):
 def main():
     # The following lines syncs the print function and sync the flushed file also on the operating system side
     sys.stdout = open(os.path.join('log_Compute_TKE_Transport.txt'), "w", buffering=1)
-    #base, nodes = extract_mesh(meshpath,meshfile)                   # Extract the mesh
-    #intermediate_file = Extract_data_TKE(sol_dirName, base, nodes, vars_inst)  # Extract the data from the solution directory
-    #compute_gradients(intermediate_file)                            # Compute the gradients and turbulence statistics
+    base, nodes = extract_mesh(meshpath,meshfile)                   # Extract the mesh
+    intermediate_file = Extract_data_TKE(sol_dirName, base, nodes, vars_inst)  # Extract the data from the solution directory
+    compute_gradients(intermediate_file)                            # Compute the gradients and turbulence statistics
     compute_TKE_transport(vars_tke2)                                         # Compute TKE transport equation components
 
 if __name__ ==  '__main__':
