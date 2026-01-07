@@ -17,25 +17,22 @@ import csv
 import matplotlib.pyplot as plt
 
 ## The requried input values
-nstart = 6       # solution dir count to begin the extract
+nstart = 5       # solution dir count to begin the extract
 # The path of the source mesh
-meshpath = '/scratch/p/plavoie/denggua1/Bombardier_LES/B_10AOA_LES/MESH_ZONE_Nov24/'
-#meshpath = '/home/p/plavoie/denggua1/scratch/Bombardier_LES/B_10AOA_LES/MESH_ZONE2/'
+meshpath = '/project/rrg-plavoie/denggua1/BBDB_10AOA/MESH_Fine_Jul25/'
 # The name of the source mesh (IF MESH CONTAINS ZONES, REQUIRE ZONE MERGING A-PRIORI)
-meshfile = 'Bombardier_10AOA_Combine_Nov24.mesh.h5'
-#meshfile = 'Bombardier_10AOA_Combine2.mesh.h5'
+meshfile = 'Bombardier_10AOA_U30_Combine_Fine.mesh.h5'
 # The path of the average solution directory
-ave_dirName = '/scratch/p/plavoie/denggua1/Bombardier_LES/B_10AOA_LES/RUN_ZONE_Nov24/AVE/'
-#ave_dirName = '/scratch/p/plavoie/denggua1/Bombardier_LES/B_10AOA_LES/RUN_ZONE_Nov24/SOLUT/'
+ave_dirName = '/project/rrg-plavoie/denggua1/BBDB_10AOA/RUN_Fine_Jul25/AVE/'
 
 
 # Variables to delete
 vars_ave = ['gamma_bar', 'hypvis_artif', 'hypvis_artif_y', 'mpi_rank', 'myzone', 'r_bar', 
         'ss_bar', 'tau_turb_xy', 'tau_turb_xz', 'tau_turb_yz', 'vis_artif', 'vis_artif_y', 
         'visco_mask', 'wall_EnergyFlux_normal', 'wall_EnergyFlux_x', 'wall_EnergyFlux_y', 
-        'wall_EnergyFlux_z', 'zeta_p', 'zeta_y', 'rho', 'rhoE', 'rhou', 'rhov', 'rhow', 
-        'AIR','Q1','Q2','Enstrophy','Strain','Pressure_Hessian','Strain_Rate','du_dx','du_dy','du_dz','dv_dx','dv_dy','dv_dz','dw_dx','dw_dy','dw_dz',
-        'vort_y','vort_z','div']
+        'wall_EnergyFlux_z', 'zeta_p', 'zeta_y','rhoE', 'rhou', 'rhov', 'rhow', 
+        'AIR','Q1','Q2','Pressure_Hessian','du_dx','du_dy','du_dz','dv_dx','dv_dy','dv_dz','dw_dx','dw_dy','dw_dz', 'uT', 'vT', 'wT',
+        'wall_Stress_x', 'wall_Stress_y', 'wall_Stress_z', 'wall_Yplus', 'wall_normal_Stress', 'wall_shear_Stress','vort_y','vort_z','div']
 
 # Function to take out the unique file names in the folder
 def sort_files(rand):  # Sorting the files in the subdirectory and filtering non-solution data and lists
