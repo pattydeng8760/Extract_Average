@@ -188,12 +188,12 @@ def compute_pope(sol_dirName, base, nodes):
     total_files = len(file_list)
     if total_files == 0:
         raise RuntimeError("No solution files found. Check sol_dirName and nstart.")
-    mesh_base = base.copy()
+    mesh_base = base
     # Compute Delta once
     Delta, Delta_safe = compute_delta_once(base, file_list[0])
 
     # -----------------------------
-    # PASS 1: mean velocities + mean nu_t + mean vort_x
+    # PASS 1: mean velocities + meacvn nu_t + mean vort_x
     # -----------------------------
     print(f'\n{"PASS 1: Mean velocities + mean vis_turb + mean vort_x":.^80}\n')
 
@@ -369,15 +369,15 @@ def compute_pope(sol_dirName, base, nodes):
     # -----------------------------
     # Write Antares output
     # -----------------------------
-    r = Reader('hdf_avbp')
-    r['base'] = base
-    r['filename'] = file_list[0]  # structure donor
-    out = r.read()
+    # r = Reader('hdf_avbp')
+    # r['base'] = base
+    # r['filename'] = file_list[0]  # structure donor
+    # out = r.read()
 
-    existing = [k[0] for k in out[0][0].keys()]
-    to_delete = [v for v in existing if v not in vars_keep]
-    if len(to_delete) > 0:
-        out.delete_variables(to_delete)
+    # existing = [k[0] for k in out[0][0].keys()]
+    # to_delete = [v for v in existing if v not in vars_keep]
+    # if len(to_delete) > 0:
+    #     out.delete_variables(to_delete)
 
     output_base = Base()
     output_base['0'] = Zone()
