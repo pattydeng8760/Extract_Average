@@ -17,7 +17,8 @@ import csv
 import matplotlib.pyplot as plt
 
 ## The requried input values
-nstart = 5       # solution dir count to begin the extract
+nstart = 1       # solution dir count to begin the extract
+nend = 4       # solution dir count to end the extract (-1 for all)
 # The path of the source mesh
 meshpath = '/project/rrg-plavoie/denggua1/BBDB_10AOA/MESH_Fine_Jul25/'
 # The name of the source mesh (IF MESH CONTAINS ZONES, REQUIRE ZONE MERGING A-PRIORI)
@@ -101,7 +102,8 @@ def Extract_data(ave_dirName, base, nodes):    # main function to exctact the me
     P, u, v, w, Q, vort_x, Strain_Rate, P_rms, u_rms, v_rms, w_rms, TKE = field_arrays
     count = 0
     # looping over all main solver directories
-    for i in range(nstart,np.shape(sol_dir)[0]):
+    end_iter = np.shape(sol_dir)[0] if nend == -1 else nend
+    for i in range(nstart,end_iter):
         dir = os.path.join(arr_dir,arr[i])
         text = 'Processing the directory: '; print(f'\n{text}{dir}') 
         files = sort_files(dir)
