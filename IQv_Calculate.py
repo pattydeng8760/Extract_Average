@@ -12,6 +12,8 @@ meshpath = '/project/rrg-moreaust-ac/denggua1/Bombardier_LES/B_10AOA_U50/MESH_Fi
 meshfile = 'Bombardier_10AOA_U50_Combine_Fine.mesh.h5'
 sol_dirName =  '/project/rrg-moreaust-ac/denggua1/Bombardier_LES/B_10AOA_U50/RUN_Fine/SOLUT/'
 nfolder = 18
+Alpha = 10
+Uinf = 50
 
 text = 'Extracting the mesh'
 print(f'\n{text:.^80}\n')
@@ -47,7 +49,8 @@ output_base[0].shared["y"] = base[0][0]["y"]
 output_base[0].shared["z"] = base[0][0]["z"]
 output_base[0][str(0)] = Instant()
 output_base[0][str(0)]["IQv"] = IQV.astype('float32')
-output_fileName = os.path.join('./', f'IQv_AOA10_U50')
+file_name = "IQv_AOA{}_U{}.h5".format(Alpha, Uinf)
+output_fileName = os.path.join('./', file_name)
 
 writer = Writer('hdf_antares')
 writer['filename'] = output_fileName
