@@ -34,11 +34,11 @@ import builtins
 # -----------------------------
 # User inputs
 # -----------------------------
-nstart = 12
+nstart = 14
 
-meshpath = '/project/rrg-plavoie/denggua1/BBDB_10AOA/MESH_Fine_Jul25/'
-meshfile = 'Bombardier_10AOA_U30_Combine_Fine.mesh.h5'
-sol_dirName = '/project/rrg-plavoie/denggua1/BBDB_10AOA/RUN_Fine_Jul25/SOLUT/'
+meshpath = '/project/rrg-moreaust-ac/denggua1/Bombardier_LES/B_10AOA_U50/MESH_Fine_Dec25/'
+meshfile = 'Bombardier_10AOA_U50_Combine_Fine.mesh.h5'
+sol_dirName =  '/project/rrg-moreaust-ac/denggua1/Bombardier_LES/B_10AOA_U50/RUN_Fine/SOLUT/'
 
 # Pope constants
 Ck = 0.094
@@ -51,7 +51,7 @@ VIS_TURB_IS_DYNAMIC_MU = True
 # Vorticity-based filtering
 # -----------------------------
 # Any node with |vort_x_mean| < VORTX_ABS_THRESHOLD is excluded from Pope stats/brackets
-VORTX_ABS_THRESHOLD = 1500   # <-- SET THIS (units: 1/s)
+VORTX_ABS_THRESHOLD = 2500   # <-- SET THIS (units: 1/s)
 
 # Optional: also print/use time-mean vort_x (computed and reported, not required for the mask)
 REPORT_VORTX_MEAN_STATS = True

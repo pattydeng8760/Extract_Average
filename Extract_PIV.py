@@ -19,16 +19,17 @@ import matplotlib.pyplot as plt
 
 # The file directory
 dir = './'
-file = 'Averaged_Solution_Limited_Ave.h5'
+file = 'Averaged_Solution_Reduced_Variables.h5'
 
 # PIV Location x
 #PIV = [1.27005,1.31511,1.375183,1.42222035, 1.48172998, 1.5641908]
 #PIV = [1.48172998]
-#Loc = [0.78]
-Loc = [0.58,0.78,1.05]
-#Loc = [0.15,0.3,0.5,0.58,0.6,0.75,0.78,0.8,0.85,0.95,1.05,1.25]
+Loc = [0.75]
+#Loc = [0.58,0.78,1.05]
+#Loc = [0.15,0.3,0.5,0.58,0.6,0.75,0.78,0.8,0.85,0.95,1.05,1.15,1.25]
 #Loc = np.linspace(0.01,1,100)
 AoA = 10 # Angle of Attack in degree
+U_inf = 50 #Freestream velocity m/s
 PIV = 1.245 + np.array(Loc)*0.3048*np.cos(AoA*np.pi/180)
 PIV = list(PIV)
 print(PIV)
@@ -54,8 +55,8 @@ for i in range(0,np.shape(PIV)[0]):
 
     writer = Writer('hdf_antares')
     #writer['base'] = inter[:,:,['x','y','z','u','v','w']]
-    writer['base'] = inter[:,:,['x','y','z','u','v','w','vort_x','vort_y','vort_z',"u_rms","v_rms","w_rms",'Enstrophy','Strain']]
-    writer['filename'] = 'PIV_{:.2f}_U50_A{:d}'.format(np.round(Loc[i]*100)/100,int(AoA))
+    writer['base'] = inter[:,:,['x','y','z','u','v','w','vort_x','vort_y','vort_z',"u_rms","v_rms","w_rms","TKE","Strain_Rate"]]
+    writer['filename'] = 'PIV_{:.2f}_U{:d}_A{:d}'.format(np.round(Loc[i]*100)/100,int(U_inf),int(AoA))
     writer.dump()
     del t, inter, writer
 

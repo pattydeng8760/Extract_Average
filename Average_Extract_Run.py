@@ -17,14 +17,14 @@ import csv
 import matplotlib.pyplot as plt
 
 ## The requried input values
-nstart = 1       # solution dir count to begin the extract
-nend = 4       # solution dir count to end the extract (-1 for all)
+nstart = 7       # solution dir count to begin the extract
+nend = -1       # solution dir count to end the extract (-1 for all)
 # The path of the source mesh
-meshpath = '/project/rrg-plavoie/denggua1/BBDB_10AOA/MESH_Fine_Jul25/'
+meshpath = '/project/rrg-moreaust-ac/denggua1/Bombardier_LES/B_10AOA_U50/MESH_Fine_Dec25/'
 # The name of the source mesh (IF MESH CONTAINS ZONES, REQUIRE ZONE MERGING A-PRIORI)
-meshfile = 'Bombardier_10AOA_U30_Combine_Fine.mesh.h5'
+meshfile = 'Bombardier_10AOA_U50_Combine_Fine.mesh.h5'
 # The path of the average solution directory
-ave_dirName = '/project/rrg-plavoie/denggua1/BBDB_10AOA/RUN_Fine_Jul25/AVE/'
+ave_dirName = '/project/rrg-moreaust-ac/denggua1/Bombardier_LES/B_10AOA_U50/RUN_Fine/AVE/'
 
 
 # Variables to delete
