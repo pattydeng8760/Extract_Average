@@ -7,7 +7,8 @@
 #SBATCH --mail-type=ALL
 #SBATCH --account=rrg-plavoie
 
-source /project/p/plavoie/denggua1/pd_env.sh
+source /project/rrg-plavoie/Env/avbp_py_env.sh
+use_py_tools
 # python Average_Extract_Run.py
 # python Average_Extract_Surface.py
 # python Extract_PIV.py
