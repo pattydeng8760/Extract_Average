@@ -4,6 +4,7 @@
 # Author: Patrick Deng (extended)
 #
 # Computes (full output — Vorticity_StrainRate_Stats.h5):
+#   Mean velocity components:       u_mean, v_mean, w_mean
 #   Mean velocity gradients:        du_dx_mean … dw_dz_mean  (all 9 components)
 #   Mean vorticity vector:          omega_x_mean, omega_y_mean, omega_z_mean
 #   Mean vorticity magnitude:       omega_mag_mean  = |<omega>|
@@ -21,6 +22,7 @@
 #   Enstrophy production:           enstrophy_production  = <omega_i' Sij' omega_j'>
 #
 # Reduced output (Vorticity_StrainRate_Stats_Reduced.h5):
+#   u_mean, v_mean, w_mean                     — mean velocity components
 #   omega_x_mean, omega_y_mean, omega_z_mean   — mean vorticity vector
 #   omega_x_rms,  omega_y_rms,  omega_z_rms   — fluctuating vorticity RMS
 #   S_mag_mean                                 — mean strain-rate magnitude  sqrt(2<Sij><Sij>)
@@ -38,7 +40,7 @@ import builtins
 # -------------------------------------------------------------------------
 # INPUT PARAMETERS  (mirror those used in TKE transport script)
 # -------------------------------------------------------------------------
-nstart   = 9        # solution dir count at which averaging begins
+nstart   = 9       # solution dir count at which averaging begins
 
 meshpath = '/project/rrg-moreaust-ac/denggua1/Bombardier_LES/B_10AOA_U50/MESH_Fine_Dec25/'
 meshfile = 'Bombardier_10AOA_U50_Combine_Fine.mesh.h5'
@@ -51,16 +53,17 @@ vars_base_clean = [
     'gamma_bar', 'hypvis_artif', 'hypvis_artif_y', 'mpi_rank', 'myzone', 'r_bar',
     'ss_bar', 'tau_turb_xy', 'tau_turb_xz', 'tau_turb_yz', 'vis_artif', 'vis_artif_y',
     'visco_mask', 'wall_EnergyFlux_normal', 'wall_EnergyFlux_x', 'wall_EnergyFlux_y',
-    'wall_EnergyFlux_z', 'zeta_p', 'zeta_y', 'rhoE', 'rhou', 'rhov', 'rhow',
+    'wall_EnergyFlux_z', 'zeta_p', 'zeta_y', 'rhoE', 'VD_volume', 'dilatation', 'temperature', 'vis_lam', 'vis_turb',
     'AIR', 'Q1', 'Q2',
     'wall_Stress_x', 'wall_Stress_y', 'wall_Stress_z',
     'wall_normal_Stress', 'wall_shear_Stress', 'wall_yplus',
-    # raw instantaneous gradient fields — replaced by computed mean/fluct versions
+    # raw instantaneous fields — replaced by computed mean versions
+    'rhou', 'rhov', 'rhow', 'rho',
     'du_dx', 'du_dy', 'du_dz',
     'dv_dx', 'dv_dy', 'dv_dz',
     'dw_dx', 'dw_dy', 'dw_dz',
     'vort_x', 'vort_y', 'vort_z',
-    'pressure', 'rho',
+    'pressure',
     'div', 'Enstrophy', 'Strain', 'Pressure_Hessian', 'Strain_Rate',
 ]
 
@@ -210,6 +213,9 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
     dw_dx_mean = np.zeros(nodes, dtype=np.float64)
     dw_dy_mean = np.zeros(nodes, dtype=np.float64)
     dw_dz_mean = np.zeros(nodes, dtype=np.float64)
+    u_mean     = np.zeros(nodes, dtype=np.float64)
+    v_mean     = np.zeros(nodes, dtype=np.float64)
+    w_mean     = np.zeros(nodes, dtype=np.float64)
 
     count = 0
     for sol_file in file_list:
@@ -230,6 +236,9 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
         dw_dx_mean = Calc_avg(dw_dx_mean, base[0][0]['dw_dx'], count + 1)
         dw_dy_mean = Calc_avg(dw_dy_mean, base[0][0]['dw_dy'], count + 1)
         dw_dz_mean = Calc_avg(dw_dz_mean, base[0][0]['dw_dz'], count + 1)
+        u_mean     = Calc_avg(u_mean, base[0][0]['rhou'] / base[0][0]['rho'], count + 1)
+        v_mean     = Calc_avg(v_mean, base[0][0]['rhov'] / base[0][0]['rho'], count + 1)
+        w_mean     = Calc_avg(w_mean, base[0][0]['rhow'] / base[0][0]['rho'], count + 1)
         count += 1
 
     print(f'First pass complete ({count} files).')
@@ -391,6 +400,8 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
     print(f'\n{"Writing full output":.^80}\n')
 
     full_fields = {
+        # Mean velocity components
+        'u_mean': u_mean, 'v_mean': v_mean, 'w_mean': w_mean,
         # Mean velocity gradients
         'du_dx_mean': du_dx_mean, 'du_dy_mean': du_dy_mean, 'du_dz_mean': du_dz_mean,
         'dv_dx_mean': dv_dx_mean, 'dv_dy_mean': dv_dy_mean, 'dv_dz_mean': dv_dz_mean,
@@ -432,7 +443,7 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
     }
 
     import copy
-    _write_antares(copy.deepcopy(base_out), full_fields, 'Averaged_Solution_Vorticity_StrainRate')
+    _write_antares(copy.deepcopy(base_out), full_fields, 'Vorticity_StrainRate_Stats')
 
     # ------------------------------------------------------------------
     # REDUCED OUTPUT — load a fresh surrogate base independently,
@@ -450,6 +461,10 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
         base_red.delete_variables(to_delete_red)
 
     reduced_fields = {
+        # Mean velocity components
+        'u_mean': u_mean,
+        'v_mean': v_mean,
+        'w_mean': w_mean,
         # Mean vorticity vector
         'omega_x_mean': omega_x_mean,
         'omega_y_mean': omega_y_mean,
@@ -464,7 +479,7 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
         'Sf_mag_mean':  Sf_mag_mean,
     }
 
-    _write_antares(base_red, reduced_fields, 'Averaged_Solution_Vorticity_StrainRate_Reduced')
+    _write_antares(base_red, reduced_fields, 'Vorticity_StrainRate_Stats_Reduced')
 
     print(f'\n{"All outputs written successfully!":.^80}\n')
     return base_out
