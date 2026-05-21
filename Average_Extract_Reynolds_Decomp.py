@@ -443,7 +443,7 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
     }
 
     import copy
-    _write_antares(copy.deepcopy(base_out), full_fields, 'Vorticity_StrainRate_Stats')
+    _write_antares(copy.deepcopy(base_out), full_fields, 'Averaged_Solution_Vorticity_StrainRate')
 
     # ------------------------------------------------------------------
     # REDUCED OUTPUT — load a fresh surrogate base independently,
@@ -479,7 +479,7 @@ def Extract_Vorticity_StrainRate(ave_dirName, base, nodes):
         'Sf_mag_mean':  Sf_mag_mean,
     }
 
-    _write_antares(base_red, reduced_fields, 'Vorticity_StrainRate_Stats_Reduced')
+    _write_antares(base_red, reduced_fields, 'Averaged_Solution_Vorticity_StrainRate_Reduced')
 
     print(f'\n{"All outputs written successfully!":.^80}\n')
     return base_out

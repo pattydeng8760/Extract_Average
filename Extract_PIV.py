@@ -57,7 +57,7 @@ for i in range(0,np.shape(PIV)[0]):
     writer = Writer('hdf_antares')
     #writer['base'] = inter[:,:,['x','y','z','u','v','w']]
     if 'StrainRate' in file: 
-        writer['base'] = inter[:,:,['x','y','z','omega_x_mean','omega_y_mean','omega_z_mean','omega_x_rms','omega_y_rms','omega_z_rms',"S_mag_mean","Sf_mag_mean"]]
+        writer['base'] = inter[:,:,['x','y','z','u','v','w','omega_x_mean','omega_y_mean','omega_z_mean','omega_x_rms','omega_y_rms','omega_z_rms',"S_mag_mean","Sf_mag_mean"]]
         print("Strain Rate and vorticity is included in the file, extracting Strain Rate data")
     else:
         writer['base'] = inter[:,:,['x','y','z','u','v','w','vort_x','vort_y','vort_z',"u_rms","v_rms","w_rms","TKE","Strain_Rate"]]
